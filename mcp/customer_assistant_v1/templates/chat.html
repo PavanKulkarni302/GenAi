@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dentsu – Order & Policy Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .typing { color: gray; font-style: "Times New Roman"; margin: 5px 0; }
+        .message.user { background-color: #5e5e5e; color: #fdfefe;  text-align: right; margin-left: auto; padding: 12px 18px; border-radius: 22px; max-width: 70%; width: fit-content; }
+        .message.bot { background-color: #000000; color: #fdfefe;  text-align: left; margin-right: auto; padding: 12px 18px; border-radius: 12px; max-width: 70%; }
+        .message.typing { background-color: #000000; color: #fdfefe; font-style: italic; margin-right: auto; padding: 12px 18px; border-radius: 12px; max-width: 70%; }
+        #user-input { width: 0%; resize: none; padding: 10px 10px; border-radius: 30px; border: none; background: #222; color: white; font-size: 16px; outline: none; flex: 1; }
+        .input-area { display: flex; gap: 11px; position: fixed; bottom: 0; left: 100px; width: 83%; padding: 5px; background: #1a1a1a; border-top: 1px solid #333; border-radius: 50px; }
+        #send-btn { background: #f1f4f5; border: none; padding: 6px 10px; border-radius: 50%; cursor: pointer; font-size: 18px; color: #000; } */
+        #send-btn:disabled { background: #999; cursor: not-allowed; }
+    </style>
+</head>
+
+<body>
+<div class="header">
+    <h1>How can I help you today?</h1>
+    <img src="/static/dgs_logo.png" class="logo">
+</div>
+
+
+
+<div id="chat-box" class="chat-box"></div>
+
+<div class="input-area">
+    <textarea id="user-input" placeholder="Ask anything..." rows="1"></textarea>
+    <button id="send-btn">⮝</button>
+</div>
+
+<script>
+const sendBtn = document.getElementById("send-btn");
+const userInput = document.getElementById("user-input");
+const chatBox = document.getElementById("chat-box");
+let isSending = false;
+
+// Add message to chat box
+function addMessage(text, role) {
+    const msg = document.createElement("div");
+    msg.className = `message ${role}`;
+    msg.innerHTML = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send message function
+async function sendMessage() {
+    if (isSending) return;
+
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    userInput.value = "";
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Show typing indicator
+    const typingDiv = document.createElement("div");
+    typingDiv.className = "message typing";
+    typingDiv.id = "typing-indicator";
+    typingDiv.innerHTML = "typing...";
+    chatBox.appendChild(typingDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    isSending = true;
+
+    try {
+        const res = await fetch("/ask", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        });
+
+        const data = await res.json();
+
+        // Remove typing indicator
+        typingDiv.remove();
+
+        addMessage(data.reply, "bot");
+    } catch (err) {
+        console.error(err);
+        typingDiv.remove();
+        addMessage("Error: Unable to get response.", "bot");
+    } finally {
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        userInput.focus();
+        isSending = false;
+    }
+}
+
+// Send message on button click
+sendBtn.addEventListener("click", sendMessage);
+
+
+
+// Send message on Enter, Shift+Enter for newline
+userInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+</script>
+</body>
+</html>

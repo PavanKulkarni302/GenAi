@@ -1,0 +1,12 @@
+langchain-groq
+fastapi
+uvicorn
+jinja2
+python-dotenv
+mcp
+langchain
+langchain-openai
+langchain-community
+langchain-mcp-adapters
+chromadb
+snowflake-connector-python
